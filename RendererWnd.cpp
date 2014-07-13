@@ -200,7 +200,7 @@ void CRendererWnd::ClearNodes()
 	m_nodes.clear();
 }
 
-void CRendererWnd::SetMaterial(IMeshSceneNode* node)
+void CRendererWnd::SetMaterial(irr::scene::IMeshSceneNode* node)
 {
 	node->setMaterialFlag(irr::video::E_MATERIAL_FLAG::EMF_LIGHTING,false);
 	node->setMaterialFlag(irr::video::E_MATERIAL_FLAG::EMF_WIREFRAME,m_wireframe);

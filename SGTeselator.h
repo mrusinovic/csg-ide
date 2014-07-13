@@ -1,12 +1,6 @@
 #pragma once
 
-namespace carve
-{
-	namespace poly
-	{
-		struct Polyhedron;
-	}
-}
+#include "carve/poly.hpp"
 
 namespace SGCreator
 {

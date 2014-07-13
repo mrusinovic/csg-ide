@@ -20,7 +20,7 @@ protected:
 	bool Initialize3D();
 
 	virtual bool OnEvent( const irr::SEvent& event );
-	void SetMaterial(IMeshSceneNode* node)
+	void SetMaterial(irr::scene::IMeshSceneNode* node);
 // Implementation
 public:
 	virtual ~CRendererWnd();
