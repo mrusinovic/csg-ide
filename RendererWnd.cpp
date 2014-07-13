@@ -92,8 +92,8 @@ bool CRendererWnd::Initialize3D( )
 	auto scb = new MyShaderCallBack();
 
 	m_nodeMaterial = m_device->getVideoDriver()->getGPUProgrammingServices()->addHighLevelShaderMaterialFromFiles(
-		"..\\media\\shaders\\terrain.vert", "main", irr::video::EVST_VS_1_1,
-		"..\\media\\shaders\\terrain.frag", "main", irr::video::EPST_PS_1_1,
+		"media\\shaders\\terrain.vert", "main", irr::video::EVST_VS_1_1,
+		"media\\shaders\\terrain.frag", "main", irr::video::EPST_PS_1_1,
 		scb, irr::video::EMT_SOLID);
 
 	scb->drop();
@@ -204,8 +204,8 @@ void CRendererWnd::SetMaterial(IMeshSceneNode* node)
 {
 	node->setMaterialFlag(irr::video::E_MATERIAL_FLAG::EMF_LIGHTING,false);
 	node->setMaterialFlag(irr::video::E_MATERIAL_FLAG::EMF_WIREFRAME,m_wireframe);
-	node->setMaterialTexture(0, m_device->getVideoDriver()->getTexture("..\\media\\White.jpg"));
-	node->setMaterialTexture(1, m_device->getVideoDriver()->getTexture("..\\media\\White.jpg"));
+	node->setMaterialTexture(0, m_device->getVideoDriver()->getTexture("media\\White.jpg"));
+	node->setMaterialTexture(1, m_device->getVideoDriver()->getTexture("media\\White.jpg"));
 	node->setMaterialType((irr::video::E_MATERIAL_TYPE)m_nodeMaterial);
 	//node->setMaterialFlag(irr::video::E_MATERIAL_FLAG::EMF_BACK_FACE_CULLING,false);
 
