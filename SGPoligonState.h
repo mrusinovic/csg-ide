@@ -1,30 +1,21 @@
 #pragma once
 
 
-extern "C"
-{
-#include "lua.h"
-#include "lualib.h"
-#include "lauxlib.h"
-}
-
-#include "luabind/luabind.hpp"
-
 
 // enum SGPolyType{
 // 	SGP_CUBE, SGP_SPHERE
 // }
 
 
-#define LOG_OUTPUT(msg,...)			CSGProcessor::Log(/*__FILE__*/"",__FUNCTION__,msg,__VA_ARGS__)
-#define LOG_RESET					CSGProcessor::LogReset();
+// namespace carve{
+// 	namespace poly{
+// 		struct Polyhedron;
+// 	}
+// }
 
-
-namespace carve{
-	namespace poly{
-		struct Polyhedron;
-	}
-}
+#include "carve/poly.hpp"
+//#include "SGMaterial.h"
+#include "SGMaterial.h"
 
 namespace CSGProcessor
 {
@@ -35,17 +26,17 @@ namespace CSGProcessor
 
 class CSGPoligonState
 {
-	std::shared_ptr<carve::poly::Polyhedron> m_poly;
+	std::shared_ptr<carve::mesh::MeshSet<3>> m_poly;
 public:
 	CSGPoligonState(void);
-	CSGPoligonState(std::shared_ptr<carve::poly::Polyhedron> p);
+	CSGPoligonState(std::shared_ptr<carve::mesh::MeshSet<3>> p);
 	~CSGPoligonState(void);
 
 	CSGPoligonState clone()const;
 
-	carve::poly::Polyhedron* GetPoly()const {return m_poly.get();}
+	std::shared_ptr<carve::mesh::MeshSet<3>> GetPoly()const {return m_poly;}
 
-	void transform(const irr::core::matrix4& m)const;
+	void transform(const irr::core::matrix4& m_)const;
 
 	//inverts normals and winding order of vertices
 	CSGPoligonState& invert();
@@ -53,17 +44,38 @@ public:
 	CSGPoligonState& move(float x, float y, float z);
 	CSGPoligonState& rotate(float angle, float x, float y, float z);
 
+	CSGPoligonState& uvscale(float u, float v);
+	CSGPoligonState& uvmove(float u, float v);
+	CSGPoligonState& uvswap();
+
+	CSGPoligonState& simplify();
+
 	void clear(){m_poly=nullptr;}
 	bool contains( CSGProcessor::CSGPoligonState const& ps );
 
 	static void LuaBind(lua_State* L);
 
-	static CSGPoligonState CUBE();
-	static CSGPoligonState SPHERE();
-	static CSGPoligonState TORUS();
-	static CSGPoligonState CYLINDER();
-	static CSGPoligonState CONE();
-	static CSGPoligonState CONE(int slices);
+#define DECLARE_CONSTRUCTION(name)\
+	static CSGPoligonState name();\
+	static CSGPoligonState name(const SGMaterial& m);\
+	static CSGPoligonState name(const SGMaterial& m, float tx, float ty);\
+	static CSGPoligonState name(float tx, float ty)
+
+#define DECLARE_CONSTRUCTION_PAR1(name, type, par)\
+	static CSGPoligonState name(type par);\
+	static CSGPoligonState name(type par, const SGMaterial& m);\
+	static CSGPoligonState name(type par, const SGMaterial& m, float tx, float ty);\
+	static CSGPoligonState name(type par, float tx, float ty)
+
+	DECLARE_CONSTRUCTION(CUBE);
+	DECLARE_CONSTRUCTION(SPHERE);
+//	DECLARE_CONSTRUCTION(TORUS);
+	DECLARE_CONSTRUCTION(CYLINDER);
+	DECLARE_CONSTRUCTION(CONE);
+	DECLARE_CONSTRUCTION_PAR1(CONE,int,slices);
+#undef DECLARE_CONSTRUCTION
+#undef DECLARE_CONSTRUCTION_PAR1
+
 };
 
 //performs union

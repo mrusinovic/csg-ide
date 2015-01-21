@@ -2,9 +2,15 @@
 
 #include "carve/csg.hpp"
 #include "SGWorldTransform.h"
+#include "SGException.h"
+#include "SGScript.h"
+
+namespace CSGProcessor
+{
+
 
 CSGWorldTransform::CSGWorldTransform( void )
-	:m_oclPass(false)
+	:m_parent(NULL)
 {
 
 }
@@ -37,6 +43,11 @@ void CSGWorldTransform::LuaBind( lua_State* L )
 		[
 			class_<CSGWorldTransform>("w_s")
 			.def("init",&CSGWorldTransform::init)
+			.def("start",&CSGWorldTransform::make_child)
+			.def("finish",&CSGWorldTransform::get_parent)
+			.def("render",(void(CSGWorldTransform::*)(const CSGPoligonState&))&CSGWorldTransform::render)
+			.def("render",(void(CSGWorldTransform::*)(const CSGPoligonState&, bool))&CSGWorldTransform::render)
+			.def("invert",&CSGWorldTransform::invert)
 			.def("rotate",&CSGWorldTransform::rotate)
 			.def("sides",&CSGWorldTransform::select_sides)
 			.def("side",&CSGWorldTransform::select_side)
@@ -44,26 +55,29 @@ void CSGWorldTransform::LuaBind( lua_State* L )
 			.def("split",&CSGWorldTransform::split)
 			.def("size",&CSGWorldTransform::size)
 			.def("scale",&CSGWorldTransform::scale)
+			.def("scaleby",&CSGWorldTransform::scaleby)
 			.def("move",&CSGWorldTransform::move)
 			.def("push",&CSGWorldTransform::push)
 			.def("pop",&CSGWorldTransform::pop)
 			.def("ocluded",&CSGWorldTransform::ocluded)
 			.def("transform",&CSGWorldTransform::transform)
+			//.def("light",&CSGWorldTransform::light)
 			.property("width",&CSGWorldTransform::getWidth)
 			.property("height",&CSGWorldTransform::getHeight)
 			.property("depth",&CSGWorldTransform::getDepth)
 			.property("ocl",&CSGWorldTransform::getOcl, &CSGWorldTransform::setOcl)
-			.def_readwrite("ocl_pass",&CSGWorldTransform::m_oclPass)
+			//.def_readwrite("ocl_pass",&CSGWorldTransform::m_oclPass)
 		];
 
-	luabind::globals(L)["pi"] = irr::core::PI64;
+	luabind::globals(L)["PI"] = irr::core::PI64;
 
-	luabind::globals(L)["x"] = XX;
-	luabind::globals(L)["y"] = YY;
-	luabind::globals(L)["z"] = ZZ;
+	luabind::globals(L)["X"] = XX;
+	luabind::globals(L)["Y"] = YY;
+	luabind::globals(L)["Z"] = ZZ;
 
 
 	SGLuaVector::LuaBind(L);
+//	SLuaLight::LuaBind(L);
 
 }
 
@@ -75,13 +89,13 @@ UnderVector CSGWorldTransform::ConvertVector( SGLuaVector const& v )
 	auto tr = get();
 	matrix = m;
 	auto tmp = tr.getScale();
-	return UnderVector(v.px ? matrix.s.X * v.X : v.X/tmp.X, v.py ? matrix.s.Y * v.Y : v.Y/tmp.Y,v.pz ? matrix.s.Z * v.Z : v.Z/tmp.Z);
+	return UnderVector(v.p.X ? matrix.s.X * v.uv.X : v.uv.X/tmp.X, v.p.Y ? matrix.s.Y * v.uv.Y : v.uv.Y/tmp.Y, v.p.Z ? matrix.s.Z * v.uv.Z : v.uv.Z/tmp.Z);
 }
 
 
 void CSGWorldTransform::init( float x, float y, float z )
 {
-	m_oclPass=false;
+//	m_oclPass=false;
 	m_ocl = CSGProcessor::CSGPoligonState();
 
 	m_stack.clear();
@@ -94,9 +108,78 @@ void CSGWorldTransform::init( float x, float y, float z )
 	m_initial.s = m_dimStart;
 }
 
+CSGWorldTransform* CSGWorldTransform::get_parent()
+{
+	auto i = CSGScript::GetInstance();
+	i->SetCurWT(m_parent);
+	return m_parent;
+}
+
+CSGWorldTransform* CSGWorldTransform::make_child(  )
+{
+	auto c = std::make_shared<CSGWorldTransform>();
+	c->m_parent = this;
+
+	auto m = get();
+
+	c->m_initial.makeIdentity();
+	c->matrix.makeIdentity();
+
+	c->m_initial.t = m.getTranslation();
+	c->m_initial.s	 = m.getScale();
+	c->m_initial.r = m.getRotationDegrees()*irr::core::DEGTORAD64;
+	c->m_dimStart = c->m_initial.s;
+
+	m_children.push_back(c);
+
+	auto i = CSGScript::GetInstance();
+
+	i->SetCurWT(c.get());
+	return c.get();
+}
+
+void CSGWorldTransform::render( const CSGPoligonState& a )
+{
+	render(a,true);
+}
+
+void CSGWorldTransform::render( const CSGPoligonState& a, bool tr )
+{
+	//MR: horrible! fix me
+	//it is done in this way because carve is killing texture coordinates of some overlapping polys.
+	//cube():scale(1,1,0.5) - cube():scale(0.7,0.7,0.5):move(0,0.1,0) + cube(wall1):scale(1.2,0.1,0.5):move(0,-0.5,0)
+	//window_wall + floor destroys wall texture coords.
+
+//	auto msh = transform(a.clone()) - m_staticGeometry;
+
+// 	if (m_ocl.GetPoly())
+// 		m_staticGeometry = m_staticGeometry + (transform(a) - m_ocl - m_staticGeometry);
+// 	else
+// 		m_staticGeometry = m_staticGeometry + (transform(a) - m_staticGeometry);
+
+	auto p = tr ? transform(a.clone()) : a;
+
+	//p.simplify();
+
+	if (m_ocl.GetPoly())
+		m_staticGeometry = m_staticGeometry + (p - m_ocl);
+	else
+		m_staticGeometry = m_staticGeometry + p;
+
+	m_staticGeometry.simplify();
+
+}
+
+
 void CSGWorldTransform::rotate( const SGLuaVector& v )
 {
-	matrix.r.set(v.X,v.Y,v.Z);
+	matrix.r.set(v.uv.X,v.uv.Y,v.uv.Z);
+}
+
+void CSGWorldTransform::scaleby( const SGLuaVector& v )
+{
+	auto uv = ConvertVector(v).abs() * UnderVector(irr::core::sign(v.uv.X), irr::core::sign(v.uv.Y), irr::core::sign(v.uv.Z));
+	matrix.s += uv;
 }
 
 void CSGWorldTransform::scale( const SGLuaVector& v )
@@ -121,7 +204,7 @@ void CSGWorldTransform::select_side(int side, luabind::object const& fun )
 	case -XX: uv.X = -1; break;
 	case -YY: uv.Y = -1; break;
 	case -ZZ: uv.Z = -1; break;
-	default: throw std::exception("side - First parameter must be one of (x,y,z,-x,-y,-z)!");
+	default: SG_THROW("side - First parameter must be one of (x,y,z,-x,-y,-z)!");
 	}
 
 	push();
@@ -171,6 +254,19 @@ void CSGWorldTransform::divide( int _x, int _y, int _z, luabind::object const& f
 					matrix.s.Z*z - matrix.s.Z/2*(_z-1)
 					);
 
+				matrix.t.roundTo(5);
+
+// 				auto tr = get().getTranslation();
+// 				auto sc = get().getScale();
+// 
+// 				std::stringstream str;
+// 				str << tr.X << "," << tr.Y << "," << tr.Z << " - "
+// 					<< tr.X + sc.X << "," << tr.X + sc.Y << "," << tr.X + sc.Z << std::endl;
+// 
+// 
+// 				OutputDebugStringA(str.str().c_str());
+
+
 				push();
 				luabind::call_function<void>(fun,x,y,z);
 				pop();
@@ -180,11 +276,9 @@ void CSGWorldTransform::divide( int _x, int _y, int _z, luabind::object const& f
 	pop();
 }
 
-template<typename T> int sign(const T& val){return (val > T(0)) - (val < T(0)); }
-
 void CSGWorldTransform::size( const SGLuaVector& v )
 {
- 	auto uv = ConvertVector(v).abs() * UnderVector(sign(v.X), sign(v.Y),sign(v.Z));
+ 	auto uv = ConvertVector(v).abs() * v.uv.getSigns();// * UnderVector(irr::core::sign(v.uv.X), irr::core::sign(v.uv.Y), irr::core::sign(v.uv.Z));
 
 	auto m = matrix;
 	m.s.set(1,1,1);
@@ -207,14 +301,16 @@ void CSGWorldTransform::to_side( int x, int y, int z, bool faceOut )
 {
 	matrix.t = UnderVector(x,y,z)/2;
 	if (x!=0){
-		matrix.r =sign(x)*UnderVector(0, irr::core::PI/2 * (faceOut ? 1 : -1), 0);
+		matrix.r = UnderVector(0, irr::core::PI/2 * (faceOut ? 1 : -1), 0) * irr::core::sign(x);
 	}
 	if (z>0){
 		matrix.r.set(0, irr::core::PI * (faceOut ? -1 : 1), 0);
 	}
 	if (y!=0){
-		matrix.r.set(sign(y)*irr::core::PI/2 * (faceOut ? -1 : 1), 0, 0);
+		matrix.r.set(irr::core::sign(y)*irr::core::PI/2 * (faceOut ? -1 : 1), 0, 0);
 	}
+
+	matrix.r.roundTo(5);
 
 }
 
@@ -229,7 +325,7 @@ void CSGWorldTransform::split( int by, luabind::object const& table )
 	std::vector<PART> parts;
 
 	if (luabind::type(table) != LUA_TTABLE) 
-		throw std::exception("split - Second parameter must be array!");
+		SG_THROW("split - Second parameter must be array!");
 
 	for (luabind::iterator i(table), end; i != end; ++i)
 	{
@@ -237,18 +333,16 @@ void CSGWorldTransform::split( int by, luabind::object const& table )
 		{
 			auto f = LuaPVal(*i); ++i;
 			if (i==end)
-				throw std::exception("Odd number of values!");
-
+				SG_THROW("Odd number of values!");
 
 			if (luabind::type(*i)!=LUA_TFUNCTION)
-				throw std::exception("Value is not function pointer!");
+				SG_THROW("Value is not function pointer!");
 
 			parts.emplace_back(f,*i);
 		}
 		catch (std::exception& e)
 		{
-			std::string str = std::string("split - Second parameter {val, fun,...} : ") + e.what();
-			throw std::exception(str.c_str());
+			SG_THROW("split - Second parameter {val, fun,...} : " << e.what());
 		}
 	}
 
@@ -265,7 +359,7 @@ void CSGWorldTransform::split( int by, luabind::object const& table )
 	}
 
 	if (bvalue && !irr::core::equals(totalPerc,1.f))
-		throw std::exception("split - Sum of all percentages must be equal 100%!");
+		SG_THROW("split - Sum of all percentages must be equal 100%!");
 
 	bvalue = false;
 
@@ -276,10 +370,10 @@ void CSGWorldTransform::split( int by, luabind::object const& table )
 	case XX: scaleByInv.X = 0; scaleBy.X = 1; if (totalAbs>getWidth()) bvalue = true; break;
 	case YY: scaleByInv.Y = 0; scaleBy.Y = 1; if (totalAbs>getHeight()) bvalue = true; break;
 	case ZZ: scaleByInv.Z = 0; scaleBy.Z = 1; if (totalAbs>getDepth()) bvalue = true; break;
-	default: throw std::exception("split - First parameter must be one of (x,y,z)!");
+	default: SG_THROW("split - First parameter must be one of (x,y,z)!");
 	}
 	if (bvalue) 
-		throw std::exception("split - Sum of all absolute values can not be greater than available space!");
+		SG_THROW("split - Sum of all absolute values can not be greater than available space!");
 
 	/*
 	
@@ -326,6 +420,9 @@ void CSGWorldTransform::split( int by, luabind::object const& table )
 		matrix.t.set(tr + uv/2);
 		tr += uv;
 
+		matrix.s.roundTo(5);
+		matrix.t.roundTo(5);
+
 		push();
 		
 		luabind::call_function<void>(p.fun);
@@ -350,3 +447,9 @@ bool CSGWorldTransform::ocluded()
 	return m_ocl.contains(transform(CSGProcessor::CSGPoligonState::CUBE()));
 }
 
+// void CSGWorldTransform::light( CSGProcessor::CSGPoligonState const& ps, const SGLuaVector& color )
+// {
+// 	m_lights.emplace_back(ps.irrMesh(),color.vec());
+// }
+
+}

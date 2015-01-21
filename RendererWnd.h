@@ -3,21 +3,34 @@
 
 class CRendererWnd : public CDockablePane, irr::IEventReceiver
 {
+
+
 // Construction
 public:
 	CRendererWnd();
 
+	irr::IrrlichtDevice* m_device;
+	irr::scene::ISceneNodeAnimator* m_anim;
+	//	irr::video::IVideoDriver* m_driver;
+//	irr::scene::ISceneManager* m_smgr;
+
 // Attributes
 protected:
-	irr::IrrlichtDevice* m_device;
-	irr::video::IVideoDriver* m_driver;
-	irr::scene::ISceneManager* m_smgr;
-	int m_nodeMaterial;
+	int m_nodeMaterial,m_nodeMaterialBump;
 	bool m_wireframe;
 	CWnd m_wnd;
-	irr::core::array<irr::scene::IMeshSceneNode*> m_nodes;
+	bool m_runDemo;
 
-	bool Initialize3D();
+	virtual BOOL OnShowControlBarMenu(CPoint point){return FALSE;}
+	virtual void OnPaneContextMenu(CWnd* pParentFrame, CPoint point){}
+
+	void Initialize3D();
+
+	void InitializeResources();
+	void InitializeDesignDevice();
+
+	void RunDemo();
+	void ToggleCameraAnimation();
 
 	virtual bool OnEvent( const irr::SEvent& event );
 	void SetMaterial(irr::scene::IMeshSceneNode* node);
@@ -26,7 +39,7 @@ public:
 	virtual ~CRendererWnd();
 
 	void Render();
-	irr::scene::IMeshSceneNode* AddNode(irr::scene::IMesh* mesh);
+	irr::scene::IMeshSceneNode* AddNode(irr::scene::IMesh* mesh, bool setMaterial = true);
 	void ClearNodes();
 	void CombineNodes();
 	void OnViewWireframe();
@@ -41,5 +54,8 @@ protected:
 
 public:
 	afx_msg void OnDestroy();
+	void Resume();
+	void Pause();
+	virtual BOOL PreTranslateMessage(MSG* pMsg);
 };
 

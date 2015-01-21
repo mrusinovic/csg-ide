@@ -1,13 +1,9 @@
 #pragma once
+#include "SGException.h"
 
-extern "C"
+
+namespace CSGProcessor
 {
-#include "lua.h"
-#include "lualib.h"
-#include "lauxlib.h"
-}
-
-#include "luabind/luabind.hpp"
 
 struct LuaFVal {
 	float v;
@@ -38,16 +34,16 @@ struct LuaPVal : LuaFVal {
 				auto pos = str.find('%');
 
 				if (pos!=std::string::npos){
-					v = atof(str.c_str())/100;
+					v = (float)atof(str.c_str())/100;
 					p=true;
 				}else{
-					v = atof(str.c_str());
+					v = (float)atof(str.c_str());
 					p=false;
 				}
 			}
 			break;
 		default:
-			throw std::exception("Parameter must be string(\"55%\") or number(0.45)!");
+			SG_THROW("Parameter must be string(\"55%\") or number(0.45)!");
 		}
 	}
 
@@ -58,18 +54,26 @@ typedef irr::core::vector3df UnderVector;
 
 struct SGLuaVector
 {
-	float X,Y,Z;
-	bool px,py,pz;
+	UnderVector uv;
+	irr::core::vector3di p;
 
-	SGLuaVector(const UnderVector& v):X(v.X),Y(v.Y),Z(v.Z),px(false),py(false),pz(false){}
+	SGLuaVector(){}
 
-	SGLuaVector(float x, float y, float z):X(x),Y(y),Z(z),px(false),py(false),pz(false){}
+	SGLuaVector(const UnderVector& v):uv(v), p(irr::core::vector3di()){}
+
+	SGLuaVector(const UnderVector& v, irr::core::vector3di np):uv(v), p(np){}
+
+	SGLuaVector(float x, float y, float z):uv(x,y,z),p(irr::core::vector3di()){}
 
 	SGLuaVector(luabind::object const& x, luabind::object const& y, luabind::object const& z);
 
 	static void LuaBind( lua_State* L );
 
-	SGLuaVector operator -()const{ SGLuaVector v = *this; v.X*=-1; v.Y*=-1; v.Z*=-1; return v;}
+	SGLuaVector operator -()const{ SGLuaVector v = *this; uv * -1; return v;}
 
-	UnderVector vec()const{return UnderVector(X,Y,Z);}
+
+
+
 };
+
+}

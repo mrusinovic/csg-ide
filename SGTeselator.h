@@ -1,9 +1,14 @@
 #pragma once
 
-#include "carve/poly.hpp"
+#include "SGMaterial.h"
 
+namespace CSGProcessor
+{
 namespace SGCreator
 {
-	irr::scene::IMesh* ConvertPolyhedronToIrrMesh(carve::poly::Polyhedron* p, irr::core::matrix4 matrix, int group = -1);
-
-}
+	//irr::scene::SMesh* 
+	std::map<SGMaterial*, irr::scene::SMeshBufferLightMap*>	ConvertPolyhedronToIrrMesh(
+		std::shared_ptr<carve::mesh::MeshSet<3>> const& poly, 
+		CarveVertexTexCoords& fvTex,
+		CarveFaceMaterials& fTexNum);
+}}

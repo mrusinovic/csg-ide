@@ -52,14 +52,14 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;IRRLICHT_FAST_MATH;_IRR_STATIC_LIB_;_IRR_WCHAR_FILESYSTEM;_CRT_SECURE_NO_WARNINGS;BOOST_NO_0X_HDR_INITIALIZER_LIST;_STDINT;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;IRRLICHT_FAST_MATH;_IRR_STATIC_LIB_;_IRR_WCHAR_FILESYSTEM;_CRT_SECURE_NO_WARNINGS;BOOST_NO_0X_HDR_INITIALIZER_LIST;NOMINMAX;CARVE_SYSTEM_BOOST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>D:\Develop\~ 3rdParty\scintilla\include;..\luabind;..\luabind\lua\src;..\carve\include;D:\Develop\~ 3rdParty\boost_1_51_0\boost;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>carvelib.lib;libIrrlicht.lib;SciLexer.lib;Scintilla.lib;luabind.lib;lua51.lib;Glu32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>LibFSRad.lib;carvelib.lib;libIrrlicht.lib;SciLexer.lib;Scintilla.lib;luabind.lib;lua5.1.lib;Glu32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(OutDir);D:\Develop\~ 3rdParty\scintilla\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Midl>
@@ -80,14 +80,17 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;IRRLICHT_FAST_MATH;_IRR_STATIC_LIB_;_IRR_WCHAR_FILESYSTEM;_CRT_SECURE_NO_WARNINGS;BOOST_NO_0X_HDR_INITIALIZER_LIST;NOMINMAX;CARVE_SYSTEM_BOOST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>D:\Develop\~ 3rdParty\scintilla\include;..\luabind;..\luabind\lua\src;..\carve\include;D:\Develop\~ 3rdParty\boost_1_51_0\boost;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>LibFSRad.lib;carvelib.lib;libIrrlicht.lib;SciLexer.lib;Scintilla.lib;luabind.lib;lua51.lib;Glu32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir);D:\Develop\~ 3rdParty\scintilla\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -104,12 +107,15 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="SGException.h" />
+    <ClInclude Include="SGMaterial.h" />
     <ClInclude Include="ChildFrm.h" />
     <ClInclude Include="CMeshCombiner.h" />
     <ClInclude Include="CsgIde.h" />
     <ClInclude Include="CsgIdeDoc.h" />
     <ClInclude Include="CsgIdeView.h" />
-    <ClInclude Include="CSGProcessor.h" />
+    <ClInclude Include="FsRadProgressDlg.h" />
+    <ClInclude Include="SGScript.h" />
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="OutputWnd.h" />
     <ClInclude Include="RendererWnd.h" />
@@ -125,12 +131,14 @@
     <ClInclude Include="SGWorldTransform.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="SGMaterial.cpp" />
     <ClCompile Include="ChildFrm.cpp" />
     <ClCompile Include="CMeshCombiner.cpp" />
     <ClCompile Include="CsgIde.cpp" />
     <ClCompile Include="CsgIdeDoc.cpp" />
     <ClCompile Include="CsgIdeView.cpp" />
-    <ClCompile Include="CSGProcessor.cpp" />
+    <ClCompile Include="FsRadProgressDlg.cpp" />
+    <ClCompile Include="SGScript.cpp" />
     <ClCompile Include="MainFrm.cpp" />
     <ClCompile Include="OutputWnd.cpp" />
     <ClCompile Include="RendererWnd.cpp" />

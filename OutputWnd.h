@@ -33,7 +33,7 @@ public:
 
 // Attributes
 protected:
-	CMFCTabCtrl	m_wndTabs;
+	//CMFCTabCtrl	m_wndTabs;
 	COutputList m_wndOutput;
 
 protected:
@@ -49,6 +49,7 @@ public:
 protected:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
+	afx_msg void OnLbnDblClick();
 
 	DECLARE_MESSAGE_MAP()
 };

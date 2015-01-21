@@ -26,8 +26,10 @@ to maintain a single distribution point for the source code.
 #define __SCINTILLACTRL_H__
 
 #ifndef SCINTILLA_H
-#pragma message("To avoid this message, please put scintilla.h in your pre compiled header (normally stdafx.h)")
-#include <Scintilla.h>
+//#pragma message("To avoid this message, please put scintilla.h in your pre compiled header (normally stdafx.h)")
+//#include <Scintilla.h>
+#include "Scintilla.h"
+#include "SciLexer.h"
 #endif
 
 #ifndef SCINTILLACTRL_EXT_CLASS

@@ -5,6 +5,10 @@
 #pragma once
 #include "ScintillaDocView.h"
 
+namespace CSGProcessor
+{
+	class CSGScript;
+}
 
 class CCsgIdeView : public CScintillaView
 {
@@ -12,6 +16,7 @@ protected: // create from serialization only
 	CCsgIdeView();
 	DECLARE_DYNCREATE(CCsgIdeView)
 
+	bool m_running;
 // Attributes
 public:
 	CCsgIdeDoc* GetDocument() const;
@@ -37,6 +42,8 @@ protected:
 	void SetAStyle(int style, COLORREF fore, COLORREF back=RGB(0xff, 0xff, 0xff), int size=-1, const char *face=0);
 	void DefineMarker(int marker, int markerType, COLORREF fore, COLORREF back);
 
+	void RunScript(CSGProcessor::CSGScript* sc);
+
 // Generated message map functions
 protected:
 	afx_msg void OnFilePrintPreview();
@@ -51,6 +58,9 @@ public:
 	BOOL LoadFile (LPCTSTR szPath);
 
 	afx_msg void OnRunRun();
+	afx_msg void OnUpdateRunRun(CCmdUI *pCmdUI);
+	afx_msg void OnRunRunfinal();
+	afx_msg void OnUpdateRunRunfinal(CCmdUI *pCmdUI);
 };
 
 #ifndef _DEBUG  // debug version in CsgIdeView.cpp

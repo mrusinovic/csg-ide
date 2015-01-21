@@ -12,7 +12,9 @@
 #include "CsgIdeDoc.h"
 #include "CsgIdeView.h"
 #include "MainFrm.h"
-#include "CSGProcessor.h"
+#include "SGScript.h"
+#include "FsRadProgressDlg.h"
+#include <thread>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -48,14 +50,14 @@ const char LuaFunctions[]=
 	"_LUA_VERSION";
 
 const char UserFunctions[]=
-	"render cube torus sphere cylinder cone vec p log "
-	"clear scale move split rotate transform invert contains clone init sides side size push pop ocluded divide ";
+	"render cube sphere cylinder cone log "
+	"clear scale scaleby move split rotate transform invert contains clone init sides side size push pop ocluded divide ";
 
 const char UserConstants[]=
-	"world.width world.depth world.height pi x y z ";
+	"world.width world.depth world.height PI X Y Z INVISIBLE ";
 
 const char UserVariables[]=
-	"world world.ocl world.ocl_pass ";
+	"world world.ocl world.ocl_pass V P material";
 
 // CCsgIdeView
 
@@ -65,11 +67,15 @@ BEGIN_MESSAGE_MAP(CCsgIdeView, CScintillaView)
 	ON_WM_CONTEXTMENU()
 	ON_WM_RBUTTONUP()
 	ON_COMMAND(ID_RUN_RUN, &CCsgIdeView::OnRunRun)
+	ON_UPDATE_COMMAND_UI(ID_RUN_RUN, &CCsgIdeView::OnUpdateRunRun)
+	ON_COMMAND(ID_RUN_RUNFINAL, &CCsgIdeView::OnRunRunfinal)
+	ON_UPDATE_COMMAND_UI(ID_RUN_RUNFINAL, &CCsgIdeView::OnUpdateRunRunfinal)
 END_MESSAGE_MAP()
 
 // CCsgIdeView construction/destruction
 
 CCsgIdeView::CCsgIdeView()
+	:m_running(false)
 {
 	// TODO: add construction code here
 
@@ -250,6 +256,8 @@ BOOL CCsgIdeView::LoadFile (LPCTSTR szPath)
 
 	CloseHandle(h);
 
+	GetCtrl().FoldAll(SC_FOLDACTION_CONTRACT);
+
 	return TRUE;
 }
 
@@ -312,23 +320,49 @@ void CCsgIdeView::OnCharAdded( SCNotification* pSCNotification )
 
 void CCsgIdeView::OnRunRun()
 {
-	/*
-	const auto& tmp = GetDocument()->GetPathName();
+	CSGProcessor::CSGScript sc;
+	sc.m_calcLightMap=false;
+	RunScript(&sc);
+}
 
-	if (!tmp.GetLength())
-		GetDocument()->SaveModified();
-	else
-		SaveFile(tmp);
 
-	CStringA str = CScintillaCtrl::W2UTF8(tmp,tmp.GetLength());
-	((CMainFrame*)AfxGetMainWnd())->GetRendererWnd().ProcessScript(str);
-	*/
-	DWORD fs=0, fsr=0;
+void CCsgIdeView::OnUpdateRunRun(CCmdUI *pCmdUI)
+{
+	pCmdUI->Enable(!m_running);
+}
+void CCsgIdeView::OnUpdateRunRunfinal(CCmdUI *pCmdUI)
+{
+	pCmdUI->Enable(!m_running);
+}
+
+
+void CCsgIdeView::OnRunRunfinal()
+{
+	CSGProcessor::CSGScript sc;
+	sc.m_calcLightMap=true;
+	RunScript(&sc);
+}
+
+void CCsgIdeView::RunScript( CSGProcessor::CSGScript* sc )
+{
+	struct tmp{
+		bool* running;
+		tmp(bool* run):running(run){*running = true;}
+		~tmp(){*running = false;}
+	};
+
+	tmp t(&m_running);
+
+	DWORD fs=0;
 
 	fs = GetCtrl().GetTextLength();
 
 	const auto& tmp = GetCtrl().GetText(fs+1);
 	CStringA str = CScintillaCtrl::W2UTF8(tmp,tmp.GetLength());
-	CSGProcessor::Run(str);
+
+	FsRadProgressDlg prog(this);
+	sc->Run(str, &prog);
 
 }
+
+
