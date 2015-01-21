@@ -1,0 +1,467 @@
+-- ctrl+F5  to run this script
+-- wait untill 15-30 percent shadow map generation then cancel
+-- double click on display to enter full screen
+-- arrow keys to move
+-- g to toggle gravity
+
+function skip() end
+
+function classic_roof()
+	fun = function (ma1, ma2)
+		return (
+		cube(ma1,world.width/2,world.depth/2)
+		- cube(ma2,7,8):rotate(PI/4,1,0,0):move(0,0.3,0.5) 
+		- cube(ma2,7,8):rotate(PI/2,0,1,0):rotate(PI/4,1,0,0):move(0,0.3,-0.5)
+		):scale(1.1,1.8,1.1):move(0,0.3,0)	
+	end
+	return (fun(window, roof) - fun(wall, wall):move(0,-0.15,0)) + fun(wall, wall):scale(0.9,0.85,0.9)
+end
+
+function instance_roof()
+	--world:move(V(0,ws/2,0))
+	world:render(classic_roof():scale(1,1,1))--:rotate(pi/2,0,1,0))
+end
+
+function instance_wall()
+	world:render(cube(wall,1,2)) 
+end
+
+function instance_window()
+
+	border = 
+		cylinder(window,1,1):uvswap():rotate(PI/2,0,1,0):scale(1,0.15,1.5):move(0,0.45,0)
+		+cylinder(window,1,1):uvswap():rotate(PI/2,0,1,0):scale(1,0.15,1.5):move(0,-0.45,0)
+		+cylinder(window,1,1):uvswap():rotate(PI/2,1,0,0):scale(0.15,0.9,1.5):move(0.45,0,0)
+		+cylinder(window,1,1):uvswap():rotate(PI/2,1,0,0):scale(0.15,0.9,1.5):move(-0.45,0,0)
+	
+	world:render(
+	(cube(wall,1,2) - cube():scale(1,0.45,1):move(0,0.05,0))
+	+ border:move(0,0.1,0):scale(1,0.5,1.2) 
+	) 
+end
+
+function instance_door()
+
+	world:render(
+(cube(wall,1,2) + cube(bar,1,1):scale(0.9,1 - 0.2,1.5):move(0,-0.2/2,0)) 
+ - cube():scale(0.7,0.8,4.7):move(0,-0.2,0)
+) 
+	
+end
+
+function instance_inner_door()
+	world:render(cube(inner_wall)- cube():scale(0.75,0.8,3):move(0,-0.1,0))
+end
+
+--------------------------------------------------------------------------------------
+  
+function do_second_floor_sides(sx,sy,sz)
+
+	world:size(V(0,0,ws))
+	world:divide(5,1,1,
+	function(x,y,z)
+		if (sx > 0 and x % 2 == 1) or (sz > 0 and x==3) then
+			instance_window()
+		else
+			instance_wall()
+		end
+	end)
+end
+
+function do_first_floor_sides(sx,sy,sz)
+
+	world:size(V(0,0,ws))
+	
+	nx = math.floor(world.width/2)
+	--ny = math.floor(world.height)
+	
+	world:divide(nx,1,1,
+	function(x,y,z)
+		if sx>0 then
+			if x == 2 then
+				instance_door()
+			elseif x==nx-2 then
+				instance_window()
+			else
+				instance_wall()
+			end
+		else
+			instance_wall()
+		end
+	end)
+end
+
+function do_second_floor_down()
+	--world:size(V(0,0,ws))	
+
+	world:size(V(0,0,ws/2))
+	world:scaleby(V(-ws,-ws,0))
+
+	nx = math.floor(world.width)
+	ny = math.floor(world.height)
+
+	world:divide(nx,ny,1,
+		function(x,y,z)
+			if x>4 or x<2 or y < ny-2 then
+				world:render(cube(wall,1,0.5))
+			end
+		end
+	)	
+end
+
+function do_first_floor_down()
+	world:size(V(0,0,ws/2))
+	
+	world:render(cube(ground,20,20):scale(10,10,1):move(0,0,-0.5) - cube():scale(1,1,4))
+	
+	nx = math.floor(world.width)
+	ny = math.floor(world.height)
+
+	world:divide(nx,ny,1,
+		function(x,y,z)
+			if x>4 or x<2 or y < ny-2 then
+				world:render(cube(floor,1,1))
+			end
+		end
+	)	
+	
+end
+
+
+function do_ceiling()
+	world:size(V(0,0,ws))
+
+	matLight = material(light, V(0.009,0.009,0.005))
+	
+	world:divide(1,12,1, function(x,y,z)
+		--	world:size(V(0,0,ws))
+			if y == 3 or y == 6 or y == 10 then
+				world:scale(V("115%","50%","100%"))
+				world:move(V(0,"-100%",0))
+				world:divide(6,1,1,
+					function()
+						world:render(cube(window,1,0.2):rotate(PI/2,0,1,0))
+					end)
+				world:move(V(0,0,"100%"))
+				world:divide(5,1,1,
+					function(bx)
+						if bx % 2 > 0 then
+							world:scale(V(ws/2,ws/2,"100%"))
+							world:render(cube(matLight,1,1):rotate(PI/2,0,1,0))
+						end
+					end)
+			end
+		end)
+	
+end
+
+function do_stairs()
+
+	fun = function()	
+		no = 8
+		c = cube(stairs,1,0.2):scale(1/no,1/no/4,1):move(1/no,1/no,0):uvmove(math.random(),math.random())
+		for x = 2, no-1 do
+			c = c + cube(stairs,1,0.2):scale(1/no,1/no/4,1):move(x/no,x/no,0):uvmove(math.random(),math.random())
+			+ cube(bar,0.07,6):scale(0.04,0.75+x/no,0.04):move(x/no,0.075+x/no/2,-0.4)
+		end
+		return (
+			c 
+			+ cube(window,1,0.07):rotate(PI/2,0,1,0):move(1.1,16.05,-6.6):scale(1,0.02,0.06):rotate(-PI/4,0,0,1)
+			):move(-0.5,-0.5+(1/no)/2,0)
+	end
+	
+	world:render(fun():rotate(PI,0,1,0))
+
+end
+
+
+function do_first_floor_rooms()
+
+	nx = math.floor(world.width)
+	ny = math.floor(world.depth)
+
+	world:divide(nx,1,1,
+		function(x,y,z)
+			if x==2 then
+				world:divide(1,1,ny,
+					function(ax,ay,az)
+						if az==0 then
+							world:size(V("200%",0,"100%"))
+							do_stairs()
+							world:push()
+								world:move(V(0,"-100%",0))
+								do_stairs() --for cellar
+							world:pop()
+						end
+					end
+				)
+			end
+		end
+	);
+
+end
+
+function do_back_room()
+	world:side(-Z,function()
+			world:size(V(0,0,ws))
+			world:divide(3,1,1,
+				function(x)
+					if x==0 then
+						instance_inner_door()
+					else
+						world:render(cube(bar))			
+					end
+				end
+			)
+		end)
+end
+
+function do_front_room()
+	world:side(-X,function()
+			world:size(V(0,0,ws))
+			--world:move(V(0,0,ws/5))			
+			world:divide(5,1,1,
+				function(x)
+					if x==3 then
+						instance_inner_door()
+					else
+						world:render(cube(bar))			
+					end
+				end
+			)
+		end)
+end
+
+function do_second_floor_rooms()
+	st = 5
+	w = 1/st
+	
+	-- carve shit
+	--world:move(V(0,ws,0))
+	--world:size(V(0,-ws,0))
+	
+	world:split(X,
+		{
+			P(w*3*100), skip,
+			P(w*(st - 3)*100), do_front_room
+		}
+	)
+
+	world:split(Z,
+		{
+			P(w*2*100), skip,
+			P(w*(st - 2)*100), 
+					function()
+						world:split(X, 
+							{
+								P(w*3*100), do_back_room,
+								P(w*(st - 3)*100), skip
+							})			
+					end
+		}
+	)
+	
+end
+
+tunnel_segment_cache = false
+function tunnel_segment()
+	off = 1.011	
+	uv = off --(1-off)
+	
+	if not tunnel_segment_cache then
+	
+		tunnel_segment_cache = 
+		    cube(INVISIBLE):scale(off,off,off)
+			- cube(cellar_wall,2,2):move(-1,0,0):scale(1,off,off):uvscale(uv,uv)
+			- cube(cellar_wall,2,2):move(1,0,0):scale(1,off,off):uvscale(uv,uv)
+			- cube(cellar_wall,2,2):move(0,0,-1):scale(off,off,1):uvscale(uv,uv)
+			- cube(cellar_wall,2,2):move(0,0,1):scale(off,off,1):uvscale(uv,uv)
+			- cube(ground,2,2):move(0,-1,0):scale(off,1,off):uvscale(uv,uv)
+			- cube(floor,2,2):move(0,1,0):scale(off,1,off):uvscale(uv,uv)
+	end
+	
+	return tunnel_segment_cache
+end
+
+function instance_tunnel_segment()	
+	world:render(tunnel_segment())
+end
+
+
+function build_tunnel()
+
+	dir = true --math.random() > 0.5
+	
+	for x = 1, 20 do
+	
+		if x % 2 == 0 then
+			dir =  math.random() > 0.5
+		end
+		
+		if dir == true then
+			world:move(V(0,0,"100%"))
+		else
+			world:move(V("100%",0,0))
+		end
+		instance_tunnel_segment()
+	end
+end
+
+function transition()
+
+	world:push()
+
+	--scy = ws/world.height
+
+	world:render(
+		cube(window,1,0.1):rotate(PI/2,0,1,0):scale(1,0.1,1):move(0,0.45,0)
+		+cube(window,1,-0.1):rotate(PI/2,0,1,0):scale(1,0.1,1):move(0,-0.45,0)
+		+cube(window,1,0.1):rotate(PI/2,1,0,0):scale(0.1,1,1):move(0.45,0,0)
+		+cube(window,1,-0.1):rotate(PI/2,1,0,0):scale(0.1,1,1):move(-0.45,0,0)
+	)
+
+	world:scaleby(V(0,-ws*2,0))
+	world:move(V(0,0,-world.width - ws/2))
+	world:size(V(0,0,world.width))
+
+	world:rotate(V(0,PI,0))
+	
+	sz = V(math.ceil(world.width),math.ceil(world.height),math.ceil(world.width))
+	mv = V((world.width - math.ceil(world.width))/2,-ws/2,0)
+	
+	world:start()
+	
+		world:size(V("-100%","-100%","-100%"))
+		world:size(sz)
+		world:move(mv)
+		
+		--CARVE? what is going on with the textures?
+		--interpolator flips texture coordinates as triangulation changes
+		--w:render(tunnel_segment() - cube(INVISIBLE):move(0,0,0.99))
+		world:render(tunnel_segment():clone():uvscale(-1,-1):uvmove(0.011*6,0.011) 
+			- cube(INVISIBLE):move(0,0,-0.99))		
+		
+		build_tunnel()
+		world:invert()
+
+	world:finish()
+	
+	world:pop()
+end
+
+
+function do_cellar()
+	world:sides(function(sx,sy,sz)
+		world:size(V(0,0,ws))
+		
+		world:divide(5,1,1,
+			function(x,y,z)
+				if sz == 1 and x==3 then
+					transition()
+				else
+					world:render(cube(cellar_wall,1,1))
+				end
+			end)
+	end)
+	
+	world:move(V(0,-ws,0))
+	world:side(-Y,function()
+		world:size(V(0,0,ws))
+		world:render(cube(ground,5,5))
+	end)	
+end
+
+function do_first_floor()	
+	world:side(-Y, do_first_floor_down)
+	
+	world:push()
+	world:move(V(0,"-100%",0))
+	do_cellar()
+	world:pop()
+	
+	world:sides(do_first_floor_sides)
+	do_first_floor_rooms()
+	
+	world:side(Y,do_ceiling)
+	
+end
+
+function do_second_floor()	
+	world:sides(do_second_floor_sides)
+	world:side(-Y, do_second_floor_down)
+	do_second_floor_rooms()
+	
+	world:side(Y,do_ceiling)
+end
+
+
+function main() 
+	ws = 0.4
+	math.randomseed(1)
+	mmain()
+	--test() 
+end
+
+function test()
+
+	world:init(12,10/3,12)
+	--world:init(6,6,1)
+	
+	cellar_wall = material("media/rockwall.jpg")
+	wall = material("media/wood_dark.png")
+	ceiling = material("media/wood.jpg")
+	floor = material("media/floor2.jpg")
+	window = material("media/wood.png")
+	stairs = material("media/wood.png")
+	ground = material("media/ground.jpg")--outside ground
+	bar = material("media/wood.jpg")
+	inner_wall = material("media/wood.jpg")
+	roof = material("media/roof.bmp")
+
+	light = material("media/White.jpg",V(0,0,0))
+	do_cellar()
+	
+end
+
+function mmain()
+
+	world:init(12,10,12)
+	
+	cellar_wall = material("media/rockwall.jpg")
+	wall = material("media/wood_dark.png")
+	ceiling = material("media/wood.jpg")
+	floor = material("media/floor2.jpg")
+	window = material("media/wood.png")
+	stairs = material("media/wood.png")
+	ground = material("media/ground.jpg")--outside ground
+	bar = material("media/wood.jpg")
+	inner_wall = material("media/wood.jpg")
+	roof = material("media/roof.bmp")
+
+	light = material("media/White.jpg",V(0,0,0))
+	
+--[[
+	table = material("media/wood.jpg")
+	legs = material("media/wood.png")
+	shade = material("media/floor.jpg")
+	book = material("media/floor.jpg")
+]]
+	world:divide(1,3,1,
+		function(x,y,z)
+			if y==0 then
+				do_first_floor()
+			elseif y == 1 then
+				do_second_floor()
+			else
+				instance_roof()
+			end
+		end
+	)
+
+	world:move(V("100%","100%","-75%"))
+	world:scale(V(ws,ws,ws))
+	world:render(cube(material(light,V(0.3,0.3,0.3))))
+		
+end
+
+main()
